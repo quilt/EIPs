@@ -174,7 +174,10 @@ network's resilience.
 When a transaction enters the `tx pool`, the client is able to quickly
 ascertain whether the transaction is valid. Once it determines this, it can be
 confident that the transaction will continue to be valid unless a transaction
-from the same account invalidates it.
+from the same account invalidates it. There are, however, cases where an
+attacker can invalidate more transactions worth of computation than they spent
+to exercise the attack and where an attacker may inundate a target with invalid
+transactions.
 
 #### Block invalidation attack
 The attack can be carried out as follows. Suppose an adversary has deployed
