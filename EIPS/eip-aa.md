@@ -21,11 +21,11 @@ it possible for developers to innovate in this area. If alternative
 requirements for transaction validity are added over time, Account Abstraction
 would actually reduce the protocol's resulting complexity. Over the years,
 there have been numerous proposals which would've benefited from
-contract-defined transaction validity. From obvious proposals, like
-multi-sig transaction, to more radical ones, such as allowing signatures to be
-batched and verified at the block level--these can be primarily implemented
-using Account Abstraction, instead of being explicitly defined and implemented
-in every client.
+contract-defined transaction validity. From obvious proposals, like multi-sig
+transaction, to more radical ones, such as allowing signatures to be batched
+and verified at the block level--these can be primarily implemented using
+Account Abstraction, instead of being explicitly defined and implemented in
+every client.
 
 ## Specification
 
@@ -58,8 +58,8 @@ The following semantics are enforced:
   `0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`.
 * If `ORIGIN (0x32)` is invoked in any other frame of execution of an AA
   transaction it must return `tx.to`.
-* If `PAYGAS` is called after any of the following opcodes are encountered,
-  it must revert:
+* If `PAYGAS` is called after any of the following opcodes are encountered, it
+  must revert:
     * `BALANCE (0x31)`
     * `GASPRICE (0x3A)`
     * `EXTCODESIZE (0x3B)`
@@ -100,14 +100,15 @@ transaction that does not call `PAYGAS`, gaining control of any assets owned by
 
 ### Disallow opcodes that access external data
 
-An important property of legacy transactions is the ability to validate them in
-constant time. This is due to the finite validity requirements of legacy
-transactions (e.g. signature recovery & nonce / balance check). 
+An important property of traditional transactions is the ability to validate
+them in constant time. This is due to the finite validity requirements of
+traditional transactions (e.g. signature recovery & nonce / balance check). 
 
 Allowing Abstract Accounts to access external data before they calls `PAYGAS`
-makes it possible to write validation logic with infinite validity requirements.
-Although clients can bound the validation computation to some rational amount,
-it's impossible to bound the space of potential validity dependencies. 
+makes it possible to write validation logic with infinite validity
+requirements. Although clients can bound the validation computation to some
+rational amount, it's impossible to bound the space of potential validity
+dependencies. 
 
 This can be extorted to create long, opaque chains of dependent transactions
 that can be completely invalidated by a single new transaction. This forces
@@ -115,9 +116,9 @@ miners to revalidate each one in the order they intend to include them in a
 block, creating a denial-of-service vector.
 
 To avoid this, Abstract Accounts must be validatable in constant time. This is
-achieved by removing their ability to rely on data external to their own account.
-Miners can then adjust the number of AA transactions they are willing to validate
-per account on an as-needed basis.
+achieved by removing their ability to rely on data external to their own
+account. Miners can then adjust the number of AA transactions they are willing
+to validate per account on an as-needed basis.
 
 It's important that this execution semantic is enforced by the protocol and not
 just a transaction pool heuristic. If this were not the case, malicious miners
@@ -151,12 +152,11 @@ increased complexity and risk that an additional type would incur.
 It is possible that an AA contract does not implement a replay protection
 mechanism, allowing a single transaction to be included multiple times
 on-chain. This would break the transaction uniqueness invariant currently
-maintained by the network and affect downstream applications which rely
-on this invariant.
+maintained by the network and affect downstream applications which rely on this
+invariant.
 
-We anticipate to resolve this compatibility issue before this EIP reaches
-a finalized state, after which there will be no backwards compatibility
-concerns.
+We anticipate to resolve this compatibility issue before this EIP reaches a
+finalized state, after which there will be no backwards compatibility concerns.
 
 ## Test Cases
 See: https://github.com/quilt/tests/tree/account-abstraction
