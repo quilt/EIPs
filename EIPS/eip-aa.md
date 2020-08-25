@@ -192,7 +192,7 @@ disproportionate to the amount of work paid for on-chain. There is no "solution"
 to an attack like this. It's possible to carry out on today's network, but the
 cost of validation is so low that is not a concern. Significantly increasing the
 amount of computation required for validation gives adversaries a larger attack
-surface. This is why is is important for miners to follow the recommended mining
+surface. This is why it is important for miners to follow the recommended mining
 strategies as they will minimize their vulnerability to attacks of this type.
 
 #### Peer denial-of-service
