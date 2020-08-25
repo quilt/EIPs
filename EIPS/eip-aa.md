@@ -16,16 +16,15 @@ Account abstraction (AA) allows contracts to pay for user transactions.
 
 ## Motivation
 Transaction validity is defined rigidly by the protocol, precluding innovation.
-Allowing contracts to determine whether they will pay for a transaction makes
-it possible for developers to innovate in this area. If alternative
-requirements for transaction validity are added over time, Account Abstraction
-would actually reduce the protocol's resulting complexity. Over the years,
-there have been numerous proposals which would've benefited from
-contract-defined transaction validity. From obvious proposals, like multi-sig
-transaction, to more radical ones, such as allowing signatures to be batched
-and verified at the block level--these can be primarily implemented using
-Account Abstraction, instead of being explicitly defined and implemented in
-every client.
+Allowing contracts to determine whether they will pay for a transaction makes it
+possible for developers to innovate in this area. If alternative requirements
+for transaction validity are added over time, Account Abstraction would actually
+reduce the protocol's resulting complexity. Over the years, there have been
+numerous proposals which would've benefited from contract-defined transaction
+validity. From obvious proposals, like multi-sig transaction, to more radical
+ones, such as allowing signatures to be batched and verified at the block
+level--these can be primarily implemented using Account Abstraction, instead of
+being explicitly defined and implemented in every client.
 
 ## Specification
 
@@ -43,8 +42,8 @@ representing the `gas_price` that the contract is willing to pay for the
 subsequent execution. If the contract's balance is at least `gas_price *
 tx.gas_limit`, then that amount will subtracted from the contract's balance and
 execution will proceed. At the end of execution, the contract will be refunded
-for any remaining gas. If the contract's balance is too low, then execution
-will revert and the contract will not pay for the execution.
+for any remaining gas. If the contract's balance is too low, then execution will
+revert and the contract will not pay for the execution.
 
 ### Execution Semantics
 
@@ -79,8 +78,8 @@ The following semantics are enforced:
     * `CREATE2 (0xF5)`
     * `SELFDESTRUCT (0xFF)`
 * AA transactions' `tx.to` must be a contract that begins with a prelude that
-  verifies `CALLER == 0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`, otherwise
-  the transaction is invalid.
+  verifies `CALLER == 0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`, otherwise the
+  transaction is invalid.
 
 
 ### Mining Strategies
@@ -101,21 +100,22 @@ transaction that does not call `PAYGAS`, gaining control of any assets owned by
 ### Disallow opcodes that access external data
 
 An important property of traditional transactions is the ability to validate
-them in constant time. This is due to the finite validity requirements of
-traditional transactions (e.g. signature recovery & nonce / balance check). 
+them in constant time. This is due to the minimal number of validity
+requirements traditional transactions need to have validated (e.g. signature,
+nonce, and balance checks).
 
-Allowing Abstract Accounts to access external data before they calls `PAYGAS`
-makes it possible to write validation logic with infinite validity
-requirements. Although clients can bound the validation computation to some
-rational amount, it's impossible to bound the space of potential validity
-dependencies. 
+Allowing AA contracts to access external data before they call `PAYGAS` makes it
+possible to write validation logic that depends on a large number of external
+values. Although clients can bound the validation computation to some rational
+amount with gas, they can't easily bound the number of transactions that depend
+on the same, arbitrary data.
 
 This can be extorted to create long, opaque chains of dependent transactions
 that can be completely invalidated by a single new transaction. This forces
 miners to revalidate each one in the order they intend to include them in a
 block, creating a denial-of-service vector.
 
-To avoid this, Abstract Accounts must be validatable in constant time. This is
+To avoid this, AA contracts must be validatable in constant time. This is
 achieved by removing their ability to rely on data external to their own
 account. Miners can then adjust the number of AA transactions they are willing
 to validate per account on an as-needed basis.
@@ -127,15 +127,14 @@ transaction in a malicious, but valid, block.
 
 ### AA transactions must call contracts with prelude
 
-The prelude is used to ensure that *only* AA transactions can call the
-contract. This is another measure taken to ensure the invariant described
-above. If this check did not occur, it would be possible for an internal
-transaction to call into many different AA contracts and invalidate an
-innumerable number of pending AA transactions.
+The prelude is used to ensure that *only* AA transactions can call the contract.
+This is another measure taken to ensure the invariant described above. If this
+check did not occur, it would be possible for an internal transaction to call
+into many different AA contracts and invalidate an innumerable number of pending
+AA transactions.
 
 There are drawbacks to the prelude mechanism. Upgrades to AA in the future may
-require modified logic in the prelude, which would require one of the
-following:
+require modified logic in the prelude, which would require one of the following:
 * changing the bytecode in the affect contracts
 * changing the semantics of that specific bytecode prefix
 * introducing a new version of AA. 
@@ -150,10 +149,9 @@ increased complexity and risk that an additional type would incur.
 
 ## Backwards Compatibility
 It is possible that an AA contract does not implement a replay protection
-mechanism, allowing a single transaction to be included multiple times
-on-chain. This would break the transaction uniqueness invariant currently
-maintained by the network and affect downstream applications which rely on this
-invariant.
+mechanism, allowing a single transaction to be included multiple times on-chain.
+This would break the transaction uniqueness invariant currently maintained by
+the network and affect downstream applications which rely on this invariant.
 
 We anticipate to resolve this compatibility issue before this EIP reaches a
 finalized state, after which there will be no backwards compatibility concerns.
@@ -172,31 +170,30 @@ here are not required in a hard fork, they are important for maintaining the
 network's resilience.
 
 ### Transaction pool validation
-When a transaction enters the `tx pool`, the client is able to quickly
-ascertain whether the transaction is valid. Once it determines this, it can be
-confident that the transaction will continue to be valid unless a transaction
-from the same account invalidates it. There are, however, cases where an
-attacker can invalidate more transactions worth of computation than they spent
-to exercise the attack and where an attacker may inundate a target with invalid
+When a transaction enters the `tx pool`, the client is able to quickly ascertain
+whether the transaction is valid. Once it determines this, it can be confident
+that the transaction will continue to be valid unless a transaction from the
+same account invalidates it. There are, however, cases where an attacker can
+invalidate more transactions worth of computation than they spent to exercise
+the attack and where an attacker may inundate a target with invalid
 transactions.
 
 #### Block invalidation attack
-The attack can be carried out as follows. Suppose an adversary has deployed
-many AA contracts. The adversary sends a valid transaction to each of the AA
+The attack can be carried out as follows. Suppose an adversary has deployed many
+AA contracts. The adversary sends a valid transaction to each of the AA
 contracts. Before the transactions can be included in a block, the adversary
-releases a block with transactions to each of their AA contracts that
-invalidate the pending transactions. The transactions in the block can be very
-minimal, just enough to update a nonce--whereas the transactions that are
-pending would be maximally expensive to validate.
+releases a block with transactions to each of their AA contracts that invalidate
+the pending transactions. The transactions in the block can be very minimal,
+just enough to update a nonce--whereas the transactions that are pending would
+be maximally expensive to validate.
 
-This attack allows the adversary to force clients on the network to perform
-work disproportionate to the amount of work paid for on-chain. There is no
-"solution" to an attack like this. It's possible to carry out on today's
-network, but the cost of validation is so low that is not a concern.
-Significantly increasing the amount of computation required for validation
-gives adversaries a larger attack surface. This is why is is important for
-miners to follow the recommended mining strategies as they will minimize their
-vulnerability to attacks of this type.
+This attack allows the adversary to force clients on the network to perform work
+disproportionate to the amount of work paid for on-chain. There is no "solution"
+to an attack like this. It's possible to carry out on today's network, but the
+cost of validation is so low that is not a concern. Significantly increasing the
+amount of computation required for validation gives adversaries a larger attack
+surface. This is why is is important for miners to follow the recommended mining
+strategies as they will minimize their vulnerability to attacks of this type.
 
 #### Peer denial-of-service
 Denial-of-Service attacks are difficult to defend, due to the difficulty in
@@ -205,9 +202,9 @@ bribed) to initiate an attack. This is not a problem that Account Abstraction
 introduces. It can be accomplished against existing clients today by inundating
 a target with transactions whose signatures are invalid. However, due increased
 allotment of validation work allowed to AA, it's important bound the amount of
-computation an adversary can force a client to expend with invalid
-transactions. For this reason, it's best for the miner to follow the recommended
-mining stragies.
+computation an adversary can force a client to expend with invalid transactions.
+For this reason, it's best for the miner to follow the recommended mining
+strategies.
 
 ## Copyright
 Copyright and related rights waived via [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
